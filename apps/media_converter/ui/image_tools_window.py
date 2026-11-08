@@ -496,6 +496,28 @@ class ImageToolsWindow(QMainWindow):
                 padding: 6px 10px;
                 font-size: 9pt;
             }
+            QComboBox::drop-down {
+                border: none;
+                padding-right: 8px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #1A1D28;
+                color: #F3F4F6;
+                selection-background-color: #2563EB;
+                selection-color: #FFFFFF;
+                border: 1px solid #2B3144;
+                outline: none;
+                padding: 4px;
+            }
+            QComboBox QAbstractItemView::item {
+                min-height: 28px;
+                color: #F3F4F6;
+                padding: 4px 8px;
+            }
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #2563EB;
+                color: #FFFFFF;
+            }
             QCheckBox {
                 color: #D1D5DB;
                 font-size: 9pt;
