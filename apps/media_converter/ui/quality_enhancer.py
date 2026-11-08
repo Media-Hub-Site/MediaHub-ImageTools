@@ -86,7 +86,7 @@ class QualityEnhancerUI(QWidget):
         card, card_layout = make_card_container()
 
         top_layout = QHBoxLayout()
-        back_btn = QPushButton("← Volver al Hub")
+        back_btn = QPushButton("← Volver")
         back_btn.setFixedWidth(130)
         back_btn.clicked.connect(self.go_back)
         back_btn.setStyleSheet(get_soft_button_style())
@@ -189,11 +189,13 @@ class QualityEnhancerUI(QWidget):
                     self.image_label.setText(f"{len(self.batch_files)} imágenes seleccionadas")
 
     def go_back(self):
-        from core.ui.hub_window import HubWindow
-        self.hub_window = HubWindow()
-        self.hub_window.show()
+        try:
+            from main import ImageToolsLauncher
+            self.launcher = ImageToolsLauncher()
+            self.launcher.show()
+        except Exception:
+            pass
         self.close()
-
     def select_image(self):
         file_dialog = QFileDialog()
         file_paths, _ = file_dialog.getOpenFileNames(self, "Seleccionar Imágenes", "", "Imágenes (*.png *.jpg *.jpeg *.bmp *.webp *.tiff)")

@@ -84,7 +84,7 @@ class WatermarkToolUI(QWidget):
         card, card_layout = make_card_container()
 
         top_layout = QHBoxLayout()
-        back_btn = QPushButton("← Volver al Hub")
+        back_btn = QPushButton("← Volver")
         back_btn.setFixedWidth(130)
         back_btn.clicked.connect(self.go_back)
         back_btn.setStyleSheet(get_soft_button_style())
@@ -195,11 +195,13 @@ class WatermarkToolUI(QWidget):
             self._refresh_convert_btn()
 
     def go_back(self):
-        from core.ui.hub_window import HubWindow
-        self.hub_window = HubWindow()
-        self.hub_window.show()
+        try:
+            from main import ImageToolsLauncher
+            self.launcher = ImageToolsLauncher()
+            self.launcher.show()
+        except Exception:
+            pass
         self.close()
-
     def select_media(self):
         file_dialog = QFileDialog()
         file_paths, _ = file_dialog.getOpenFileNames(self, "Seleccionar Multimedia", "", "Multimedia (*.mp4 *.mkv *.avi *.mov *.png *.jpg *.jpeg *.webp)")
