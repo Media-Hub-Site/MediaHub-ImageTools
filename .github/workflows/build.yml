@@ -1,4 +1,4 @@
-﻿name: Build and Release MediaHub-ImageTools
+name: Build and Release MediaHub-ImageTools
 
 on:
   push:
@@ -26,8 +26,37 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller
+          pip install pyinstaller requests
           pip install -r requirements.txt
+
+      - name: Download Real-ESRGAN Models
+        shell: pwsh
+        run: |
+          $modelsDir = "apps/models/realesrgan/models"
+          if (!(Test-Path $modelsDir)) { New-Item -ItemType Directory -Path $modelsDir -Force }
+          
+          $baseUrl = "https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0"
+          $files = @(
+            "realesrgan-x4plus.bin",
+            "realesrgan-x4plus.param",
+            "realesrgan-x4plus-anime.bin",
+            "realesrgan-x4plus-anime.param",
+            "realesr-animevideov3-x2.bin",
+            "realesr-animevideov3-x2.param",
+            "realesr-animevideov3-x3.bin",
+            "realesr-animevideov3-x3.param",
+            "realesr-animevideov3-x4.bin",
+            "realesr-animevideov3-x4.param"
+          )
+          
+          foreach ($f in $files) {
+            $dest = Join-Path $modelsDir $f
+            if (!(Test-Path $dest)) {
+              Write-Host "Downloading $f..."
+              Invoke-WebRequest -Uri "$baseUrl/$f" -OutFile $dest
+            }
+          }
+          Write-Host "Real-ESRGAN models ready for build."
 
       - name: Build Executable with PyInstaller
         run: pyinstaller main.spec
