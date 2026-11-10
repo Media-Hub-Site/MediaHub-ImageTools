@@ -30,6 +30,7 @@ from apps.media_converter.converters.conversion import (
     _prepare_dest
 )
 from apps.media_converter.ui.split_preview import SplitPreviewWidget
+from apps.media_converter.i18n import t, get_current_language
 
 
 def get_asset(filename):
@@ -158,7 +159,7 @@ class ImageWorker(QThread):
 class ImageToolsWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Image Tools — Media Hub")
+        self.setWindowTitle(t("app_title"))
         self.resize(1020, 680)
         self.setMinimumSize(960, 600)
 
@@ -188,9 +189,9 @@ class ImageToolsWindow(QMainWindow):
         sb_layout.setContentsMargins(18, 24, 18, 24)
         sb_layout.setSpacing(10)
 
-        app_title = QLabel("IMAGE TOOLS")
+        app_title = QLabel(t("header_title"))
         app_title.setObjectName("sidebarTitle")
-        app_sub = QLabel("Herramientas de Imagen IA")
+        app_sub = QLabel(t("header_sub"))
         app_sub.setObjectName("sidebarSubtitle")
         sb_layout.addWidget(app_title)
         sb_layout.addWidget(app_sub)
@@ -198,10 +199,10 @@ class ImageToolsWindow(QMainWindow):
 
         self.nav_buttons = []
         modules = [
-            ("Quitar Fondo IA", 0),
-            ("Mejorar Calidad 4x", 1),
-            ("Marca de Agua", 2),
-            ("Comprimir / Optimizar", 3),
+            (t("tab_bg"), 0),
+            (t("tab_enhance"), 1),
+            (t("tab_watermark"), 2),
+            (t("tab_compress"), 3),
         ]
 
         for text, idx in modules:
@@ -215,7 +216,7 @@ class ImageToolsWindow(QMainWindow):
 
         sb_layout.addStretch()
 
-        self.btn_open_folder = QPushButton("Ver Carpeta Salida")
+        self.btn_open_folder = QPushButton(t("btn_open_folder"))
         self.btn_open_folder.setObjectName("navSecondaryBtn")
         self.btn_open_folder.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_open_folder.clicked.connect(self._open_output_dir)
@@ -236,11 +237,11 @@ class ImageToolsWindow(QMainWindow):
         fb_layout = QHBoxLayout(file_box)
         fb_layout.setContentsMargins(14, 10, 14, 10)
 
-        self.file_label = QLabel("Arrastra o selecciona una imagen para comenzar")
+        self.file_label = QLabel(t("drag_drop_prompt"))
         self.file_label.setObjectName("fileLabel")
         fb_layout.addWidget(self.file_label, stretch=1)
 
-        self.btn_select_file = QPushButton("Seleccionar Imagen")
+        self.btn_select_file = QPushButton(t("btn_select_image"))
         self.btn_select_file.setObjectName("actionBtnPrimary")
         self.btn_select_file.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_select_file.clicked.connect(self._pick_file)
@@ -259,11 +260,11 @@ class ImageToolsWindow(QMainWindow):
         tab_bg = QWidget()
         t0_layout = QHBoxLayout(tab_bg)
         t0_layout.setContentsMargins(0, 0, 0, 0)
-        t0_layout.addWidget(QLabel("Modelo:"))
+        t0_layout.addWidget(QLabel(t("lbl_model")))
         self.combo_bg_model = QComboBox()
         self.combo_bg_model.addItems(["u2net (General / Preciso)", "isnet-general-use", "u2net_human_seg (Personas)", "silueta (Rápido)"])
         t0_layout.addWidget(self.combo_bg_model)
-        self.chk_alpha = QCheckBox("Alpha Matting (Bordes suaves)")
+        self.chk_alpha = QCheckBox("Alpha Matting")
         t0_layout.addWidget(self.chk_alpha)
         t0_layout.addStretch()
         self.options_stack.addWidget(tab_bg)
@@ -272,16 +273,16 @@ class ImageToolsWindow(QMainWindow):
         tab_qual = QWidget()
         t1_layout = QHBoxLayout(tab_qual)
         t1_layout.setContentsMargins(0, 0, 0, 0)
-        t1_layout.addWidget(QLabel("Modelo IA:"))
+        t1_layout.addWidget(QLabel(t("lbl_ai_model")))
         self.combo_qual_model = QComboBox()
         self.combo_qual_model.addItems(["realesrgan-x4plus (Fotos)", "realesrgan-x4plus-anime (Ilustraciones/Anime)"])
         t1_layout.addWidget(self.combo_qual_model)
-        t1_layout.addWidget(QLabel("Escala:"))
+        t1_layout.addWidget(QLabel(t("lbl_scale")))
         self.spin_scale = QSpinBox()
         self.spin_scale.setRange(2, 4)
         self.spin_scale.setValue(4)
         t1_layout.addWidget(self.spin_scale)
-        self.chk_tta = QCheckBox("Modo TTA (Máxima fidelidad)")
+        self.chk_tta = QCheckBox(t("chk_tta"))
         t1_layout.addWidget(self.chk_tta)
         t1_layout.addStretch()
         self.options_stack.addWidget(tab_qual)
@@ -292,9 +293,9 @@ class ImageToolsWindow(QMainWindow):
         t2_layout.setContentsMargins(0, 0, 0, 0)
         t2_layout.setSpacing(10)
 
-        t2_layout.addWidget(QLabel("Tipo:"))
+        t2_layout.addWidget(QLabel(t("lbl_type")))
         self.combo_wm_type = QComboBox()
-        self.combo_wm_type.addItems(["Texto", "Imagen / Logo"])
+        self.combo_wm_type.addItems([t("type_text"), t("type_image")])
         self.combo_wm_type.currentIndexChanged.connect(self._on_wm_type_changed)
         t2_layout.addWidget(self.combo_wm_type)
 
@@ -303,7 +304,7 @@ class ImageToolsWindow(QMainWindow):
         wt_layout = QHBoxLayout(self.wm_text_container)
         wt_layout.setContentsMargins(0, 0, 0, 0)
         wt_layout.setSpacing(6)
-        wt_layout.addWidget(QLabel("Texto:"))
+        wt_layout.addWidget(QLabel(t("lbl_text")))
         self.txt_watermark = QLineEdit("Media Hub")
         self.txt_watermark.setFixedWidth(140)
         self.txt_watermark.textChanged.connect(self._update_watermark_live_preview)
@@ -315,10 +316,10 @@ class ImageToolsWindow(QMainWindow):
         wi_layout = QHBoxLayout(self.wm_image_container)
         wi_layout.setContentsMargins(0, 0, 0, 0)
         wi_layout.setSpacing(6)
-        self.btn_select_logo = QPushButton("Cargar Logo PNG")
+        self.btn_select_logo = QPushButton(t("btn_select_logo"))
         self.btn_select_logo.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_select_logo.clicked.connect(self._pick_logo_file)
-        self.lbl_logo_name = QLabel("Sin logo seleccionado")
+        self.lbl_logo_name = QLabel(t("no_logo_selected"))
         self.lbl_logo_name.setStyleSheet("color: #9CA3AF; font-size: 8.5pt;")
         wi_layout.addWidget(self.btn_select_logo)
         wi_layout.addWidget(self.lbl_logo_name)
@@ -327,13 +328,13 @@ class ImageToolsWindow(QMainWindow):
 
         self.current_logo_path = None
 
-        t2_layout.addWidget(QLabel("Posición:"))
+        t2_layout.addWidget(QLabel(t("lbl_position")))
         self.combo_wm_pos = QComboBox()
-        self.combo_wm_pos.addItems(["Centro", "Abajo Derecha", "Abajo Izquierda", "Arriba Derecha", "Arriba Izquierda"])
+        self.combo_wm_pos.addItems([t("pos_center"), t("pos_bottom_right"), t("pos_bottom_left"), t("pos_top_right"), t("pos_top_left")])
         self.combo_wm_pos.currentIndexChanged.connect(self._update_watermark_live_preview)
         t2_layout.addWidget(self.combo_wm_pos)
 
-        t2_layout.addWidget(QLabel("Opacidad:"))
+        t2_layout.addWidget(QLabel(t("lbl_opacity")))
         self.spin_wm_opac = QSpinBox()
         self.spin_wm_opac.setRange(10, 100)
         self.spin_wm_opac.setValue(70)
@@ -348,11 +349,11 @@ class ImageToolsWindow(QMainWindow):
         tab_comp = QWidget()
         t3_layout = QHBoxLayout(tab_comp)
         t3_layout.setContentsMargins(0, 0, 0, 0)
-        t3_layout.addWidget(QLabel("Formato:"))
+        t3_layout.addWidget(QLabel(t("lbl_format")))
         self.combo_comp_fmt = QComboBox()
         self.combo_comp_fmt.addItems(["webp", "jpg", "png"])
         t3_layout.addWidget(self.combo_comp_fmt)
-        t3_layout.addWidget(QLabel("Calidad:"))
+        t3_layout.addWidget(QLabel(t("lbl_quality")))
         self.slider_quality = QSlider(Qt.Orientation.Horizontal)
         self.slider_quality.setRange(20, 100)
         self.slider_quality.setValue(80)
@@ -376,7 +377,7 @@ class ImageToolsWindow(QMainWindow):
         self.status_label.setObjectName("statusLabel")
         bottom_box.addWidget(self.status_label)
 
-        self.btn_process = QPushButton("Procesar Imagen")
+        self.btn_process = QPushButton(t("btn_process"))
         self.btn_process.setObjectName("btnProcess")
         self.btn_process.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_process.clicked.connect(self._start_process)
@@ -396,7 +397,7 @@ class ImageToolsWindow(QMainWindow):
 
     def _pick_logo_file(self):
         file, _ = QFileDialog.getOpenFileName(
-            self, "Seleccionar Logo o Marca de Agua", "",
+            self, t("dialog_select_logo_title"), "",
             "Imágenes PNG/JPG (*.png *.jpg *.jpeg *.webp)"
         )
         if file:
@@ -462,14 +463,14 @@ class ImageToolsWindow(QMainWindow):
             th = metrics.height()
             
             p_lower = pos.lower()
-            if "centro" in p_lower:
+            if "centro" in p_lower or "center" in p_lower:
                 x = (w - tw) // 2
                 y = (h - th) // 2
-            elif "arriba izquierda" in p_lower:
+            elif "arriba izquierda" in p_lower or "top left" in p_lower:
                 x, y = margin, margin
-            elif "arriba derecha" in p_lower:
-                x = w - tw - margin, margin
-            elif "abajo izquierda" in p_lower:
+            elif "arriba derecha" in p_lower or "top right" in p_lower:
+                x, y = w - tw - margin, margin
+            elif "abajo izquierda" in p_lower or "bottom left" in p_lower:
                 x, y = margin, h - th - margin
             else:
                 x = w - tw - margin, h - th - margin
@@ -490,7 +491,7 @@ class ImageToolsWindow(QMainWindow):
 
     def _pick_file(self):
         file, _ = QFileDialog.getOpenFileName(
-            self, "Seleccionar Imagen", "",
+            self, t("dialog_select_img_title"), "",
             "Imágenes (*.png *.jpg *.jpeg *.webp *.bmp *.tiff)"
         )
         if file:
@@ -498,7 +499,7 @@ class ImageToolsWindow(QMainWindow):
             self.current_dest_path = None
             self.file_label.setText(os.path.basename(file))
             self.split_preview.set_images(file, None)
-            self.status_label.setText("Imagen lista para procesar.")
+            self.status_label.setText(t("status_ready"))
             if self.options_stack.currentIndex() == 2:
                 self._update_watermark_live_preview()
 
@@ -517,7 +518,7 @@ class ImageToolsWindow(QMainWindow):
 
     def _start_process(self):
         if not self.current_orig_path or not os.path.isfile(self.current_orig_path):
-            QMessageBox.warning(self, "Atención", "Por favor selecciona primero una imagen.")
+            QMessageBox.warning(self, t("dialog_attention"), t("msg_select_first"))
             return
 
         idx = self.options_stack.currentIndex()
@@ -543,7 +544,7 @@ class ImageToolsWindow(QMainWindow):
             dest = os.path.join(out_dir, f"{base_name}_watermark.png")
             wm_type = "texto" if self.combo_wm_type.currentIndex() == 0 else "imagen"
             if wm_type == "imagen" and (not self.current_logo_path or not os.path.exists(self.current_logo_path)):
-                QMessageBox.warning(self, "Atención", "Por favor selecciona un archivo de imagen o logo para la marca de agua.")
+                QMessageBox.warning(self, t("dialog_attention"), t("msg_select_logo_first"))
                 return
             params.update({
                 "dest": dest,
@@ -563,7 +564,7 @@ class ImageToolsWindow(QMainWindow):
         self.btn_process.setEnabled(False)
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(15)
-        self.status_label.setText("Procesando...")
+        self.status_label.setText(t("status_processing"))
 
         self.current_worker = ImageWorker(task_type, params, self)
         self.current_worker.progress.connect(self._on_worker_progress)

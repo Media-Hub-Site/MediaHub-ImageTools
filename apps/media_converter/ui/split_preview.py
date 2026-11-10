@@ -11,6 +11,7 @@ import os
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtGui import QPainter, QPixmap, QColor, QPen, QCursor, QImageReader
 from PyQt6.QtCore import Qt, QRect, QPoint, QSize
+from apps.media_converter.i18n import t
 
 
 def _load_preview_pixmap(path: str | None, max_dim: int = 2560) -> QPixmap | None:
@@ -130,9 +131,10 @@ class SplitPreviewWidget(QWidget):
         painter.setClipRect(0, 0, split_x, h)
         painter.drawPixmap(ox, oy, scaled_before)
         # Etiqueta "Original"
+        orig_lbl = t("preview_original")
         painter.setPen(QColor("#FFFFFF"))
-        painter.fillRect(10, 10, 70, 24, QColor(0, 0, 0, 160))
-        painter.drawText(QRect(10, 10, 70, 24), Qt.AlignmentFlag.AlignCenter, "Original")
+        painter.fillRect(10, 10, 80, 24, QColor(0, 0, 0, 160))
+        painter.drawText(QRect(10, 10, 80, 24), Qt.AlignmentFlag.AlignCenter, orig_lbl)
         painter.restore()
 
         # Lado derecho (Después)
@@ -140,9 +142,10 @@ class SplitPreviewWidget(QWidget):
         painter.setClipRect(split_x, 0, w - split_x, h)
         painter.drawPixmap(ox, oy, scaled_after)
         # Etiqueta "Resultado"
+        res_lbl = t("preview_result")
         painter.setPen(QColor("#FFFFFF"))
         painter.fillRect(w - 90, 10, 80, 24, QColor(37, 99, 235, 200))
-        painter.drawText(QRect(w - 90, 10, 80, 24), Qt.AlignmentFlag.AlignCenter, "Resultado")
+        painter.drawText(QRect(w - 90, 10, 80, 24), Qt.AlignmentFlag.AlignCenter, res_lbl)
         painter.restore()
 
         # Línea divisoria central con manija
