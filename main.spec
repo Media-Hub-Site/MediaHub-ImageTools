@@ -1,4 +1,4 @@
-# -*- mode: python ; coding: utf-8 -*-
+﻿# -*- mode: python ; coding: utf-8 -*-
 import sys
 import os
 
@@ -67,3 +67,4 @@ coll = COLLECT(
     upx_exclude=[],
     name='MediaHub-ImageTools',
 )
+

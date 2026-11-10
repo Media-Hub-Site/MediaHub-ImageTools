@@ -31,6 +31,7 @@ from apps.media_converter.converters.conversion import (
 )
 from apps.media_converter.ui.split_preview import SplitPreviewWidget
 from apps.media_converter.i18n import t, get_current_language
+from core.sound_manager import SoundManager
 
 
 def get_asset(filename):
@@ -577,6 +578,7 @@ class ImageToolsWindow(QMainWindow):
         self.status_label.setText(msg)
 
     def _on_worker_finished(self, msg: str, saved_path: str):
+        SoundManager.instance().play("success")
         self.btn_process.setEnabled(True)
         self.progress_bar.setVisible(False)
         self.current_dest_path = saved_path
