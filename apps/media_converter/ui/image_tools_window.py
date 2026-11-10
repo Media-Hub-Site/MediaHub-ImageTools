@@ -140,7 +140,7 @@ class ImageWorker(QThread):
                     base_image.save(dest)
                     
                 self.progress.emit(100, "¡Listo!")
-                self.finished.emit("✅ Marca de agua aplicada correctamente", dest)
+                self.finished.emit("Marca de agua aplicada correctamente", dest)
 
             elif self.task_type == "compress":
                 fmt = self.params.get("fmt", "webp")
@@ -198,10 +198,10 @@ class ImageToolsWindow(QMainWindow):
 
         self.nav_buttons = []
         modules = [
-            ("🪄  Quitar Fondo IA", 0),
-            ("✨  Mejorar Calidad 4x", 1),
-            ("🏷️  Marca de Agua", 2),
-            ("⚡  Comprimir / Optimizar", 3),
+            ("Quitar Fondo IA", 0),
+            ("Mejorar Calidad 4x", 1),
+            ("Marca de Agua", 2),
+            ("Comprimir / Optimizar", 3),
         ]
 
         for text, idx in modules:
@@ -215,7 +215,7 @@ class ImageToolsWindow(QMainWindow):
 
         sb_layout.addStretch()
 
-        self.btn_open_folder = QPushButton("📁 Ver Carpeta Salida")
+        self.btn_open_folder = QPushButton("Ver Carpeta Salida")
         self.btn_open_folder.setObjectName("navSecondaryBtn")
         self.btn_open_folder.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_open_folder.clicked.connect(self._open_output_dir)
@@ -315,7 +315,7 @@ class ImageToolsWindow(QMainWindow):
         wi_layout = QHBoxLayout(self.wm_image_container)
         wi_layout.setContentsMargins(0, 0, 0, 0)
         wi_layout.setSpacing(6)
-        self.btn_select_logo = QPushButton("📁 Cargar Logo PNG")
+        self.btn_select_logo = QPushButton("Cargar Logo PNG")
         self.btn_select_logo.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_select_logo.clicked.connect(self._pick_logo_file)
         self.lbl_logo_name = QLabel("Sin logo seleccionado")
@@ -376,7 +376,7 @@ class ImageToolsWindow(QMainWindow):
         self.status_label.setObjectName("statusLabel")
         bottom_box.addWidget(self.status_label)
 
-        self.btn_process = QPushButton("🚀 Procesar Imagen")
+        self.btn_process = QPushButton("Procesar Imagen")
         self.btn_process.setObjectName("btnProcess")
         self.btn_process.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_process.clicked.connect(self._start_process)
@@ -496,7 +496,7 @@ class ImageToolsWindow(QMainWindow):
         if file:
             self.current_orig_path = file
             self.current_dest_path = None
-            self.file_label.setText(f"📄 {os.path.basename(file)}")
+            self.file_label.setText(os.path.basename(file))
             self.split_preview.set_images(file, None)
             self.status_label.setText("Imagen lista para procesar.")
             if self.options_stack.currentIndex() == 2:
@@ -563,7 +563,7 @@ class ImageToolsWindow(QMainWindow):
         self.btn_process.setEnabled(False)
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(15)
-        self.status_label.setText("⏳ Procesando...")
+        self.status_label.setText("Procesando...")
 
         self.current_worker = ImageWorker(task_type, params, self)
         self.current_worker.progress.connect(self._on_worker_progress)
@@ -579,13 +579,13 @@ class ImageToolsWindow(QMainWindow):
         self.btn_process.setEnabled(True)
         self.progress_bar.setVisible(False)
         self.current_dest_path = saved_path
-        self.status_label.setText("✅ ¡Procesamiento completado!")
+        self.status_label.setText("Procesamiento completado")
         self.split_preview.set_images(self.current_orig_path, saved_path)
 
     def _on_worker_error(self, err: str):
         self.btn_process.setEnabled(True)
         self.progress_bar.setVisible(False)
-        self.status_label.setText("❌ Error en el procesamiento")
+        self.status_label.setText("Error en el procesamiento")
         QMessageBox.critical(self, "Error", err)
 
     def _apply_styles(self):
