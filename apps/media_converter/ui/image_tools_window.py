@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QStackedWidget, QFileDialog, QMessageBox, QComboBox, QCheckBox,
     QSpinBox, QSlider, QProgressBar, QFrame, QScrollArea, QLineEdit
 )
-from PyQt6.QtGui import QIcon, QPixmap, QColor
+from PyQt6.QtGui import QIcon, QPixmap, QColor, QPainter, QFont, QPen
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 
 from apps.media_converter.converters.conversion import (
@@ -286,23 +286,61 @@ class ImageToolsWindow(QMainWindow):
         t1_layout.addStretch()
         self.options_stack.addWidget(tab_qual)
 
-        # Tab 2: Marca de agua
+        # Tab 2: Marca de agua (Soporte Texto o Logo/Imagen con Previsualización en Vivo)
         tab_wm = QWidget()
         t2_layout = QHBoxLayout(tab_wm)
         t2_layout.setContentsMargins(0, 0, 0, 0)
-        t2_layout.addWidget(QLabel("Texto:"))
+        t2_layout.setSpacing(10)
+
+        t2_layout.addWidget(QLabel("Tipo:"))
+        self.combo_wm_type = QComboBox()
+        self.combo_wm_type.addItems(["Texto", "Imagen / Logo"])
+        self.combo_wm_type.currentIndexChanged.connect(self._on_wm_type_changed)
+        t2_layout.addWidget(self.combo_wm_type)
+
+        # Contenedor de Texto
+        self.wm_text_container = QWidget()
+        wt_layout = QHBoxLayout(self.wm_text_container)
+        wt_layout.setContentsMargins(0, 0, 0, 0)
+        wt_layout.setSpacing(6)
+        wt_layout.addWidget(QLabel("Texto:"))
         self.txt_watermark = QLineEdit("Media Hub")
-        self.txt_watermark.setFixedWidth(160)
-        t2_layout.addWidget(self.txt_watermark)
+        self.txt_watermark.setFixedWidth(140)
+        self.txt_watermark.textChanged.connect(self._update_watermark_live_preview)
+        wt_layout.addWidget(self.txt_watermark)
+        t2_layout.addWidget(self.wm_text_container)
+
+        # Contenedor de Imagen / Logo
+        self.wm_image_container = QWidget()
+        wi_layout = QHBoxLayout(self.wm_image_container)
+        wi_layout.setContentsMargins(0, 0, 0, 0)
+        wi_layout.setSpacing(6)
+        self.btn_select_logo = QPushButton("📁 Cargar Logo PNG")
+        self.btn_select_logo.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_select_logo.clicked.connect(self._pick_logo_file)
+        self.lbl_logo_name = QLabel("Sin logo seleccionado")
+        self.lbl_logo_name.setStyleSheet("color: #9CA3AF; font-size: 8.5pt;")
+        wi_layout.addWidget(self.btn_select_logo)
+        wi_layout.addWidget(self.lbl_logo_name)
+        self.wm_image_container.setVisible(False)
+        t2_layout.addWidget(self.wm_image_container)
+
+        self.current_logo_path = None
+
         t2_layout.addWidget(QLabel("Posición:"))
         self.combo_wm_pos = QComboBox()
         self.combo_wm_pos.addItems(["Centro", "Abajo Derecha", "Abajo Izquierda", "Arriba Derecha", "Arriba Izquierda"])
+        self.combo_wm_pos.currentIndexChanged.connect(self._update_watermark_live_preview)
         t2_layout.addWidget(self.combo_wm_pos)
+
         t2_layout.addWidget(QLabel("Opacidad:"))
         self.spin_wm_opac = QSpinBox()
         self.spin_wm_opac.setRange(10, 100)
         self.spin_wm_opac.setValue(70)
+        self.spin_wm_opac.setSuffix("%")
+        self.spin_wm_opac.valueChanged.connect(self._update_watermark_live_preview)
         t2_layout.addWidget(self.spin_wm_opac)
+
         t2_layout.addStretch()
         self.options_stack.addWidget(tab_wm)
 
@@ -350,10 +388,105 @@ class ImageToolsWindow(QMainWindow):
         # Activar primera pestaña
         self._switch_tab(0)
 
+    def _on_wm_type_changed(self, idx: int):
+        is_text = (idx == 0)
+        self.wm_text_container.setVisible(is_text)
+        self.wm_image_container.setVisible(not is_text)
+        self._update_watermark_live_preview()
+
+    def _pick_logo_file(self):
+        file, _ = QFileDialog.getOpenFileName(
+            self, "Seleccionar Logo o Marca de Agua", "",
+            "Imágenes PNG/JPG (*.png *.jpg *.jpeg *.webp)"
+        )
+        if file:
+            self.current_logo_path = file
+            self.lbl_logo_name.setText(os.path.basename(file))
+            self._update_watermark_live_preview()
+
+    def _update_watermark_live_preview(self):
+        """Genera una vista previa instantánea en vivo del resultado en el split slider."""
+        if self.options_stack.currentIndex() != 2:
+            return
+        if not self.current_orig_path or not os.path.exists(self.current_orig_path):
+            return
+        
+        base_px = self.split_preview.pixmap_before
+        if not base_px or base_px.isNull():
+            return
+            
+        wm_type = "texto" if self.combo_wm_type.currentIndex() == 0 else "imagen"
+        text = self.txt_watermark.text().strip() or "Media Hub"
+        logo_path = self.current_logo_path
+        pos = self.combo_wm_pos.currentText()
+        opac = self.spin_wm_opac.value()
+        
+        preview_px = base_px.copy()
+        painter = QPainter(preview_px)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        
+        w, h = preview_px.width(), preview_px.height()
+        margin = max(10, int(w * 0.03))
+        
+        if wm_type == "imagen" and logo_path and os.path.exists(logo_path):
+            logo_px = QPixmap(logo_path)
+            if not logo_px.isNull():
+                target_w = max(40, int(w * 0.20))
+                scaled_logo = logo_px.scaledToWidth(target_w, Qt.TransformationMode.SmoothTransformation)
+                wm_w, wm_h = scaled_logo.width(), scaled_logo.height()
+                
+                p_lower = pos.lower()
+                if "centro" in p_lower:
+                    x = (w - wm_w) // 2
+                    y = (h - wm_h) // 2
+                elif "arriba izquierda" in p_lower:
+                    x, y = margin, margin
+                elif "arriba derecha" in p_lower:
+                    x = w - wm_w - margin, margin
+                elif "abajo izquierda" in p_lower:
+                    x = margin
+                    y = h - wm_h - margin
+                else:
+                    x = w - wm_w - margin
+                    y = h - wm_h - margin
+                    
+                painter.setOpacity(opac / 100.0)
+                painter.drawPixmap(x, y, scaled_logo)
+        else:
+            f_size = max(14, int(w * 0.035))
+            font = QFont("Arial", f_size, QFont.Weight.Bold)
+            painter.setFont(font)
+            metrics = painter.fontMetrics()
+            tw = metrics.horizontalAdvance(text)
+            th = metrics.height()
+            
+            p_lower = pos.lower()
+            if "centro" in p_lower:
+                x = (w - tw) // 2
+                y = (h - th) // 2
+            elif "arriba izquierda" in p_lower:
+                x, y = margin, margin
+            elif "arriba derecha" in p_lower:
+                x = w - tw - margin, margin
+            elif "abajo izquierda" in p_lower:
+                x, y = margin, h - th - margin
+            else:
+                x = w - tw - margin, h - th - margin
+                
+            painter.setOpacity(opac / 100.0)
+            painter.setPen(QPen(QColor(255, 255, 255)))
+            painter.drawText(x, y + metrics.ascent(), text)
+            
+        painter.end()
+        self.split_preview.set_after_pixmap(preview_px)
+
     def _switch_tab(self, index: int):
         for i, btn in enumerate(self.nav_buttons):
             btn.setChecked(i == index)
         self.options_stack.setCurrentIndex(index)
+        if index == 2:
+            self._update_watermark_live_preview()
 
     def _pick_file(self):
         file, _ = QFileDialog.getOpenFileName(
@@ -366,6 +499,8 @@ class ImageToolsWindow(QMainWindow):
             self.file_label.setText(f"📄 {os.path.basename(file)}")
             self.split_preview.set_images(file, None)
             self.status_label.setText("Imagen lista para procesar.")
+            if self.options_stack.currentIndex() == 2:
+                self._update_watermark_live_preview()
 
     def _get_output_dir(self):
         home = os.environ.get("USERPROFILE") or os.path.expanduser("~")
@@ -406,9 +541,15 @@ class ImageToolsWindow(QMainWindow):
         elif idx == 2:
             task_type = "watermark"
             dest = os.path.join(out_dir, f"{base_name}_watermark.png")
+            wm_type = "texto" if self.combo_wm_type.currentIndex() == 0 else "imagen"
+            if wm_type == "imagen" and (not self.current_logo_path or not os.path.exists(self.current_logo_path)):
+                QMessageBox.warning(self, "Atención", "Por favor selecciona un archivo de imagen o logo para la marca de agua.")
+                return
             params.update({
-                "dest": dest, "wm_type": "texto",
+                "dest": dest,
+                "wm_type": wm_type,
                 "text": self.txt_watermark.text().strip() or "Media Hub",
+                "logo": self.current_logo_path,
                 "pos": self.combo_wm_pos.currentText(),
                 "opacity": self.spin_wm_opac.value()
             })

@@ -4,6 +4,7 @@ apps/media_converter/ui/split_preview.py
 Widget interactivo Split-Slider "Antes / Después" para comparar imágenes.
 Permite deslizar una barra vertical con el ratón para ver la imagen original vs la procesada.
 Soporta imágenes de ultra alta resolución (4K, 8K, 16K) sin desbordar memoria.
+Soporta previsualización en vivo (live preview) mediante QPixmap directo.
 """
 
 import os
@@ -54,6 +55,11 @@ class SplitPreviewWidget(QWidget):
     def set_images(self, path_before: str | None, path_after: str | None):
         self.pixmap_before = _load_preview_pixmap(path_before)
         self.pixmap_after = _load_preview_pixmap(path_after)
+        self.update()
+
+    def set_after_pixmap(self, pixmap: QPixmap | None):
+        """Asigna directamente un QPixmap generado en memoria (para vista previa en vivo)."""
+        self.pixmap_after = pixmap
         self.update()
 
     def clear(self):
@@ -113,7 +119,6 @@ class SplitPreviewWidget(QWidget):
             return
 
         # 3. Dibujar ambas con recorte según el split_x
-        # Escalar ambas al mismo tamaño respetando aspect ratio
         scaled_before = self.pixmap_before.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         scaled_after = self.pixmap_after.scaled(w, h, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
 
