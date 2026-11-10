@@ -3,11 +3,41 @@ apps/media_converter/ui/split_preview.py
 ────────────────────────────────────────
 Widget interactivo Split-Slider "Antes / Después" para comparar imágenes.
 Permite deslizar una barra vertical con el ratón para ver la imagen original vs la procesada.
+Soporta imágenes de ultra alta resolución (4K, 8K, 16K) sin desbordar memoria.
 """
 
+import os
 from PyQt6.QtWidgets import QWidget
-from PyQt6.QtGui import QPainter, QPixmap, QColor, QPen, QCursor
-from PyQt6.QtCore import Qt, QRect, QPoint
+from PyQt6.QtGui import QPainter, QPixmap, QColor, QPen, QCursor, QImageReader
+from PyQt6.QtCore import Qt, QRect, QPoint, QSize
+
+
+def _load_preview_pixmap(path: str | None, max_dim: int = 2560) -> QPixmap | None:
+    """Carga una imagen de forma segura y optimizada para previsualización."""
+    if not path or not os.path.exists(path):
+        return None
+    try:
+        reader = QImageReader(path)
+        reader.setAutoTransform(True)
+        # Permitir asignación de hasta 2048 MB para imágenes masivas de escalado 4x/8x
+        reader.setAllocationLimit(2048)
+        sz = reader.size()
+        if sz.isValid() and (sz.width() > max_dim or sz.height() > max_dim):
+            scaled_sz = sz.scaled(QSize(max_dim, max_dim), Qt.AspectRatioMode.KeepAspectRatio)
+            reader.setScaledSize(scaled_sz)
+        img = reader.read()
+        if not img.isNull():
+            return QPixmap.fromImage(img)
+    except Exception as e:
+        print(f"Error cargando preview con QImageReader: {e}")
+    # Respaldo convencional
+    try:
+        px = QPixmap(path)
+        if not px.isNull():
+            return px
+    except Exception:
+        pass
+    return None
 
 
 class SplitPreviewWidget(QWidget):
@@ -22,8 +52,8 @@ class SplitPreviewWidget(QWidget):
         self.setCursor(Qt.CursorShape.SizeHorCursor)
 
     def set_images(self, path_before: str | None, path_after: str | None):
-        self.pixmap_before = QPixmap(path_before) if path_before else None
-        self.pixmap_after = QPixmap(path_after) if path_after else None
+        self.pixmap_before = _load_preview_pixmap(path_before)
+        self.pixmap_after = _load_preview_pixmap(path_after)
         self.update()
 
     def clear(self):

@@ -83,12 +83,64 @@ class ImageWorker(QThread):
                 logo = self.params.get("logo", None)
                 pos = self.params.get("pos", "Centro")
                 opac = self.params.get("opacity", 70)
-                res = WatermarkLogic.aplicar_marca_agua(orig, dest, wm_type, text, logo, pos, opac)
-                if "Error" in res:
-                    self.error.emit(res)
+                
+                from PIL import Image, ImageDraw, ImageFont
+                base_image = Image.open(orig).convert("RGBA")
+                w, h = base_image.size
+                
+                if wm_type == "imagen" and logo and os.path.exists(logo):
+                    wm = Image.open(logo).convert("RGBA")
+                    if opac < 100:
+                        alpha = wm.split()[3].point(lambda p: p * (opac / 100.0))
+                        wm.putalpha(alpha)
+                    wm_ratio = wm.width / wm.height
+                    new_w = max(20, int(w * 0.18))
+                    new_h = max(20, int(new_w / wm_ratio))
+                    wm = wm.resize((new_w, new_h), Image.Resampling.LANCZOS)
                 else:
-                    self.progress.emit(100, "¡Listo!")
-                    self.finished.emit(res, dest)
+                    font_size = max(18, int(w * 0.04))
+                    try:
+                        font = ImageFont.truetype("arial.ttf", font_size)
+                    except Exception:
+                        font = ImageFont.load_default()
+                    dummy = Image.new("RGBA", (1, 1))
+                    d_dummy = ImageDraw.Draw(dummy)
+                    bbox = d_dummy.textbbox((0, 0), text, font=font)
+                    tw = bbox[2] - bbox[0]
+                    th = bbox[3] - bbox[1]
+                    pad = max(6, int(font_size * 0.3))
+                    wm = Image.new("RGBA", (tw + pad * 2, th + pad * 2), (0, 0, 0, 0))
+                    d_wm = ImageDraw.Draw(wm)
+                    alpha = int(255 * (opac / 100.0))
+                    d_wm.text((pad, pad), text, fill=(255, 255, 255, alpha), font=font)
+                    
+                margin = int(w * 0.03)
+                pos_lower = pos.lower()
+                if "centro" in pos_lower or "center" in pos_lower:
+                    x = (w - wm.width) // 2
+                    y = (h - wm.height) // 2
+                elif "arriba izquierda" in pos_lower or "top-left" in pos_lower:
+                    x, y = margin, margin
+                elif "arriba derecha" in pos_lower or "top-right" in pos_lower:
+                    x = w - wm.width - margin
+                    y = margin
+                elif "abajo izquierda" in pos_lower or "bottom-left" in pos_lower:
+                    x = margin
+                    y = h - wm.height - margin
+                else:
+                    x = w - wm.width - margin
+                    y = h - wm.height - margin
+                    
+                base_image.paste(wm, (x, y), wm)
+                ext = os.path.splitext(dest)[1].lower()
+                if ext in [".jpg", ".jpeg"]:
+                    base_image = base_image.convert("RGB")
+                    base_image.save(dest, quality=95)
+                else:
+                    base_image.save(dest)
+                    
+                self.progress.emit(100, "¡Listo!")
+                self.finished.emit("✅ Marca de agua aplicada correctamente", dest)
 
             elif self.task_type == "compress":
                 fmt = self.params.get("fmt", "webp")
